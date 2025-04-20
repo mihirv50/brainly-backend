@@ -1,9 +1,10 @@
 import { Router } from "express";
 import bcrypt from "bcrypt";
-import { contentModel, userModel } from "../db";
+import { contentModel, linkModel, userModel } from "../db";
 import jwt from "jsonwebtoken";
 import { z } from "zod";
 import { userMiddleware } from "../middleware";
+import { random } from "../utils";
 export const userRouter = Router();
 
 userRouter.post("/api/V1/signup", async (req, res) => {
@@ -76,47 +77,99 @@ userRouter.post("/api/V1/content", userMiddleware, async (req, res) => {
       title: title,
       link: link,
       userId: req.userId,
-      tags: []
+      tags: [],
     });
   } catch (error) {
     console.log(error);
   }
   res.json({
-    msg: "Content Created!"
-  })
-  return
+    msg: "Content Created!",
+  });
+  return;
 });
-userRouter.get("/api/V1/content",userMiddleware, async (req, res) => {
-  const userId = req.userId
+userRouter.get("/api/V1/content", userMiddleware, async (req, res) => {
+  const userId = req.userId;
   try {
-    const Content = await contentModel.find({
-      userId: userId
-    }).populate("userId","username")
-    if(!Content){
+    const Content = await contentModel
+      .find({
+        userId: userId,
+      })
+      .populate("userId", "username");
+    if (!Content) {
       res.status(403).json({
-        msg:"Content not found"
-      })
-    }else{
+        msg: "Content not found",
+      });
+    } else {
       res.json({
-        Content
-      })
+        Content,
+      });
     }
   } catch (error) {
-    console.log(error)
+    console.log(error);
   }
- 
 });
 userRouter.delete("/api/V1/content", userMiddleware, async (req, res) => {
   const { contentId } = req.body;
   await contentModel.deleteMany({
     contentId: contentId,
-    userId: req.userId
-  })
+    userId: req.userId,
+  });
   res.json({
-    msg: "Deleted!"
-  })
+    msg: "Deleted!",
+  });
 });
 
-userRouter.post("/api/V1/brain/share", (req, res) => {});
+userRouter.post("/api/V1/brain/share", userMiddleware, async (req, res) => {
+  const { share } = req.body;
+  if (share) {
+    const hash = random(10);
+      const existinglink = await linkModel.findOne({
+        userId: req.userId
+      }) 
+      if(existinglink){
+        res.json({
+          hash
+        })
+        return;
+      }
+      
+      await linkModel.create({
+        userId: req.userId,
+        hash: hash,
+      });
+      res.json({
+        hash,
+      });
+    
+  } else {
+    await linkModel.deleteOne({
+      userId: req.userId,
+    });
+    res.json({
+      msg: "Removed Link",
+    });
+  }
+});
 
-userRouter.get("/api/V1/brain/:sharelink", (req, res) => {});
+userRouter.get("/api/V1/brain/:sharelink", async (req, res) => {
+  const hash = req.params.sharelink;
+  const link = await linkModel.findOne({
+    hash: hash,
+  });
+  if (!link) {
+    res.status(411).json({
+      msg: "Invalid Input",
+    });
+    return;
+  }
+  const content = await contentModel.findOne({
+    userId: link.userId,
+  });
+  const user = await userModel.findOne({
+    _id: link.userId,
+  });
+  res.json({
+    username: user?.username,
+    content: content,
+  });
+});

@@ -19,6 +19,7 @@ const db_1 = require("../db");
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const zod_1 = require("zod");
 const middleware_1 = require("../middleware");
+const utils_1 = require("../utils");
 exports.userRouter = (0, express_1.Router)();
 exports.userRouter.post("/api/V1/signup", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const requiredBody = zod_1.z.object({
@@ -87,31 +88,33 @@ exports.userRouter.post("/api/V1/content", middleware_1.userMiddleware, (req, re
             title: title,
             link: link,
             userId: req.userId,
-            tags: []
+            tags: [],
         });
     }
     catch (error) {
         console.log(error);
     }
     res.json({
-        msg: "Content Created!"
+        msg: "Content Created!",
     });
     return;
 }));
 exports.userRouter.get("/api/V1/content", middleware_1.userMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const userId = req.userId;
     try {
-        const Content = yield db_1.contentModel.find({
-            userId: userId
-        }).populate("userId", "username");
+        const Content = yield db_1.contentModel
+            .find({
+            userId: userId,
+        })
+            .populate("userId", "username");
         if (!Content) {
             res.status(403).json({
-                msg: "Content not found"
+                msg: "Content not found",
             });
         }
         else {
             res.json({
-                Content
+                Content,
             });
         }
     }
@@ -119,6 +122,65 @@ exports.userRouter.get("/api/V1/content", middleware_1.userMiddleware, (req, res
         console.log(error);
     }
 }));
-exports.userRouter.delete("/api/V1/content", (req, res) => { });
-exports.userRouter.post("/api/V1/brain/share", (req, res) => { });
-exports.userRouter.get("/api/V1/brain/:sharelink", (req, res) => { });
+exports.userRouter.delete("/api/V1/content", middleware_1.userMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { contentId } = req.body;
+    yield db_1.contentModel.deleteMany({
+        contentId: contentId,
+        userId: req.userId,
+    });
+    res.json({
+        msg: "Deleted!",
+    });
+}));
+exports.userRouter.post("/api/V1/brain/share", middleware_1.userMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { share } = req.body;
+    if (share) {
+        const hash = (0, utils_1.random)(10);
+        const existinglink = yield db_1.linkModel.findOne({
+            userId: req.userId
+        });
+        if (existinglink) {
+            res.json({
+                hash
+            });
+            return;
+        }
+        yield db_1.linkModel.create({
+            userId: req.userId,
+            hash: hash,
+        });
+        res.json({
+            hash,
+        });
+    }
+    else {
+        yield db_1.linkModel.deleteOne({
+            userId: req.userId,
+        });
+        res.json({
+            msg: "Removed Link",
+        });
+    }
+}));
+exports.userRouter.get("/api/V1/brain/:sharelink", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const hash = req.params.sharelink;
+    const link = yield db_1.linkModel.findOne({
+        hash: hash,
+    });
+    if (!link) {
+        res.status(411).json({
+            msg: "Invalid Input",
+        });
+        return;
+    }
+    const content = yield db_1.contentModel.findOne({
+        userId: link.userId,
+    });
+    const user = yield db_1.userModel.findOne({
+        _id: link.userId,
+    });
+    res.json({
+        username: user === null || user === void 0 ? void 0 : user.username,
+        content: content,
+    });
+}));
