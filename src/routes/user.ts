@@ -7,7 +7,7 @@ import { userMiddleware } from "../middleware";
 import { random } from "../utils";
 export const userRouter = Router();
 
-userRouter.post("/api/V1/signup", async (req, res) => {
+userRouter.post("/signup", async (req, res) => {
   const requiredBody = z.object({
     username: z.string().min(3).max(15),
     password: z.string().min(8).max(20),
@@ -36,7 +36,7 @@ userRouter.post("/api/V1/signup", async (req, res) => {
   });
 });
 
-userRouter.post("/api/V1/signin", async (req, res) => {
+userRouter.post("/signin", async (req, res) => {
   const { username, password } = req.body;
   try {
     const response = await userModel.findOne({
@@ -70,7 +70,7 @@ userRouter.post("/api/V1/signin", async (req, res) => {
   }
 });
 
-userRouter.post("/api/V1/content", userMiddleware, async (req, res) => {
+userRouter.post("/content", userMiddleware, async (req, res) => {
   const { title, link } = req.body;
   try {
     await contentModel.create({
@@ -87,7 +87,7 @@ userRouter.post("/api/V1/content", userMiddleware, async (req, res) => {
   });
   return;
 });
-userRouter.get("/api/V1/content", userMiddleware, async (req, res) => {
+userRouter.get("/content", userMiddleware, async (req, res) => {
   const userId = req.userId;
   try {
     const Content = await contentModel
@@ -108,7 +108,7 @@ userRouter.get("/api/V1/content", userMiddleware, async (req, res) => {
     console.log(error);
   }
 });
-userRouter.delete("/api/V1/content", userMiddleware, async (req, res) => {
+userRouter.delete("/content", userMiddleware, async (req, res) => {
   const { contentId } = req.body;
   await contentModel.deleteMany({
     contentId: contentId,
@@ -119,7 +119,7 @@ userRouter.delete("/api/V1/content", userMiddleware, async (req, res) => {
   });
 });
 
-userRouter.post("/api/V1/brain/share", userMiddleware, async (req, res) => {
+userRouter.post("/share", userMiddleware, async (req, res) => {
   const { share } = req.body;
   if (share) {
     const hash = random(10);
@@ -151,7 +151,7 @@ userRouter.post("/api/V1/brain/share", userMiddleware, async (req, res) => {
   }
 });
 
-userRouter.get("/api/V1/brain/:sharelink", async (req, res) => {
+userRouter.get("/brain/:sharelink", async (req, res) => {
   const hash = req.params.sharelink;
   const link = await linkModel.findOne({
     hash: hash,

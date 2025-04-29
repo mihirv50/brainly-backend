@@ -21,7 +21,7 @@ const zod_1 = require("zod");
 const middleware_1 = require("../middleware");
 const utils_1 = require("../utils");
 exports.userRouter = (0, express_1.Router)();
-exports.userRouter.post("/api/V1/signup", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+exports.userRouter.post("/signup", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const requiredBody = zod_1.z.object({
         username: zod_1.z.string().min(3).max(15),
         password: zod_1.z.string().min(8).max(20),
@@ -49,7 +49,7 @@ exports.userRouter.post("/api/V1/signup", (req, res) => __awaiter(void 0, void 0
         msg: "Signed Up!",
     });
 }));
-exports.userRouter.post("/api/V1/signin", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+exports.userRouter.post("/signin", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { username, password } = req.body;
     try {
         const response = yield db_1.userModel.findOne({
@@ -81,7 +81,7 @@ exports.userRouter.post("/api/V1/signin", (req, res) => __awaiter(void 0, void 0
         console.log(error);
     }
 }));
-exports.userRouter.post("/api/V1/content", middleware_1.userMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+exports.userRouter.post("/content", middleware_1.userMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { title, link } = req.body;
     try {
         yield db_1.contentModel.create({
@@ -99,7 +99,7 @@ exports.userRouter.post("/api/V1/content", middleware_1.userMiddleware, (req, re
     });
     return;
 }));
-exports.userRouter.get("/api/V1/content", middleware_1.userMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+exports.userRouter.get("/content", middleware_1.userMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const userId = req.userId;
     try {
         const Content = yield db_1.contentModel
@@ -122,7 +122,7 @@ exports.userRouter.get("/api/V1/content", middleware_1.userMiddleware, (req, res
         console.log(error);
     }
 }));
-exports.userRouter.delete("/api/V1/content", middleware_1.userMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+exports.userRouter.delete("/content", middleware_1.userMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { contentId } = req.body;
     yield db_1.contentModel.deleteMany({
         contentId: contentId,
@@ -132,7 +132,7 @@ exports.userRouter.delete("/api/V1/content", middleware_1.userMiddleware, (req, 
         msg: "Deleted!",
     });
 }));
-exports.userRouter.post("/api/V1/brain/share", middleware_1.userMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+exports.userRouter.post("/share", middleware_1.userMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { share } = req.body;
     if (share) {
         const hash = (0, utils_1.random)(10);
@@ -162,7 +162,7 @@ exports.userRouter.post("/api/V1/brain/share", middleware_1.userMiddleware, (req
         });
     }
 }));
-exports.userRouter.get("/api/V1/brain/:sharelink", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+exports.userRouter.get("/brain/:sharelink", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const hash = req.params.sharelink;
     const link = yield db_1.linkModel.findOne({
         hash: hash,
